@@ -124,7 +124,7 @@ struct httprequest {
   bool skipall;   /* skip all incoming data */
   bool noexpect;  /* refuse Expect: (don't read the body) */
   bool connmon;   /* monitor the state of the connection, log disconnects */
-  bool upgrade;   /* test case allows upgrade to http2 */
+  bool upgrade;   /* test case allows upgrade */
   bool upgrade_request; /* upgrade request found and allowed */
   bool close;     /* similar to swsclose in response: close connection after
                      response is sent */
@@ -182,7 +182,7 @@ const char *cmdfile = DEFAULT_CMDFILE;
    proper point - like with NTLM */
 #define CMD_CONNECTIONMONITOR "connection-monitor"
 
-/* upgrade to http2 */
+/* upgrade to http2/websocket/xxxx */
 #define CMD_UPGRADE "upgrade"
 
 /* close connection */
@@ -311,7 +311,7 @@ static int parse_servercmd(struct httprequest *req)
         req->connmon = TRUE;
       }
       else if(!strncmp(CMD_UPGRADE, cmd, strlen(CMD_UPGRADE))) {
-        logmsg("enabled upgrade to http2");
+        logmsg("enabled upgrade");
         req->upgrade = TRUE;
       }
       else if(!strncmp(CMD_SWSCLOSE, cmd, strlen(CMD_SWSCLOSE))) {
@@ -541,8 +541,9 @@ static int ProcessRequest(struct httprequest *req)
         parse_servercmd(req);
     }
     else if((req->offset >= 3)) {
+      unsigned char *l = (unsigned char *)line;
       logmsg("** Unusual request. Starts with %02x %02x %02x (%c%c%c)",
-             line[0], line[1], line[2], line[0], line[1], line[2]);
+             l[0], l[1], l[2], l[0], l[1], l[2]);
     }
   }
 
@@ -763,8 +764,9 @@ static int ProcessRequest(struct httprequest *req)
 
   if(req->upgrade && strstr(req->reqbuf, "Upgrade:")) {
     /* we allow upgrade and there was one! */
-    logmsg("Found Upgrade: in request and allows it");
+    logmsg("Found Upgrade: in request and allow it");
     req->upgrade_request = TRUE;
+    return 0; /* not done */
   }
 
   if(req->cl > 0) {
@@ -865,6 +867,16 @@ static int get_request(curl_socket_t sock, struct httprequest *req)
   char *reqbuf = req->reqbuf;
   ssize_t got = 0;
   int overflow = 0;
+
+  if(req->upgrade_request) {
+    /* upgraded connection, work it differently until end of connection */
+    logmsg("Upgraded connection, this is a no longer HTTP/1");
+
+    /* dump the request received so far to the external file */
+    reqbuf[req->offset] = '\0';
+    storerequest(reqbuf, req->offset);
+    return -1;
+  }
 
   if(req->offset >= REQBUFSIZ-1) {
     /* buffer is already full; do nothing */
@@ -1708,10 +1720,10 @@ http_connect_cleanup:
   *infdp = CURL_SOCKET_BAD;
 }
 
-static void http2(struct httprequest *req)
+static void http_upgrade(struct httprequest *req)
 {
   (void)req;
-  logmsg("switched to http2");
+  logmsg("Upgraded to ... %u", req->upgrade_request);
   /* left to implement */
 }
 
@@ -1852,9 +1864,9 @@ static int service_connection(curl_socket_t msgsock, struct httprequest *req,
   }
 
   if(req->upgrade_request) {
-    /* an upgrade request, switch to http2 here */
-    http2(req);
-    return -1;
+    /* an upgrade request, switch to another protocol here */
+    http_upgrade(req);
+    return 1;
   }
 
   /* if we got a CONNECT, loop and get another request as well! */
@@ -2273,7 +2285,7 @@ int main(int argc, char *argv[])
           }
 
           /* Reset the request, unless we're still in the middle of reading */
-          if(rc)
+          if(rc && !req->upgrade_request)
             init_httprequest(req);
         } while(rc > 0);
       }
