@@ -50,6 +50,15 @@ extern const struct Curl_handler Curl_handler_http;
 extern const struct Curl_handler Curl_handler_https;
 #endif
 
+#ifdef USE_WEBSOCKETS
+extern const struct Curl_handler Curl_handler_ws;
+
+#ifdef USE_SSL
+extern const struct Curl_handler Curl_handler_wss;
+#endif
+#endif /* websockets */
+
+
 /* Header specific functions */
 bool Curl_compareheader(const char *headerline,  /* line to check */
                         const char *header,   /* header keyword _with_ colon */
@@ -217,6 +226,11 @@ struct HTTP {
     HTTPSEND_REQUEST, /* sending a request */
     HTTPSEND_BODY     /* sending body */
   } sending;
+
+#ifdef USE_WEBSOCKETS
+  bool contfragment; /* set TRUE if the previous fragment sent was not final */
+  unsigned char wsmask[4]; /* 32 bit mask for this connection */
+#endif
 
 #ifndef CURL_DISABLE_HTTP
   struct dynbuf send_buffer; /* used if the request couldn't be sent in one

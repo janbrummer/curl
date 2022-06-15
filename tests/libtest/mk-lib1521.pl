@@ -96,6 +96,16 @@ static size_t writecb(char *buffer, size_t size, size_t nitems,
   return 0;
 }
 
+static ssize_t ws_writecb(void *userdata, char *data,
+                         size_t len, unsigned int flags)
+{
+  (void)userdata;
+  (void)data;
+  (void)len;
+  (void)flags;
+  return 0;
+}
+
 static size_t readcb(char *buffer,
               size_t size,
               size_t nitems,

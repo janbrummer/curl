@@ -2143,6 +2143,13 @@ typedef enum {
   /* set the SSH host key callback custom pointer */
   CURLOPT(CURLOPT_SSH_HOSTKEYDATA, CURLOPTTYPE_CBPOINT, 317),
 
+  /* websockets options */
+  CURLOPT(CURLOPT_WS_OPTIONS, CURLOPTTYPE_LONG, 318),
+
+  /* websockets write callback */
+  CURLOPT(CURLOPT_WS_WRITEFUNCTION, CURLOPTTYPE_FUNCTIONPOINT, 319),
+  CURLOPT(CURLOPT_WS_WRITEDATA, CURLOPTTYPE_CBPOINT, 320),
+
   CURLOPT_LASTENTRY /* the last unused */
 } CURLoption;
 
@@ -3095,6 +3102,7 @@ CURL_EXTERN CURLcode curl_easy_pause(CURL *handle, int bitmask);
 #include "urlapi.h"
 #include "options.h"
 #include "header.h"
+#include "websockets.h"
 
 /* the typechecker doesn't work in C++ (yet) */
 #if defined(__GNUC__) && defined(__GNUC_MINOR__) && \
