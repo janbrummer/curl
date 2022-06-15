@@ -4118,6 +4118,7 @@ AS_HELP_STRING([--disable-websockets],[Disable WebSockets support]),
      if test "x$SSL_ENABLED" = "x1"; then
        SUPPORT_PROTOCOLS="$SUPPORT_PROTOCOLS WSS"
      fi
+     experimental="$experimental Websockets"
      ;;
   esac ],
      AC_MSG_RESULT(no)
