@@ -28,6 +28,7 @@ upgrade
 # for the forced CURL_ENTROPY
 <features>
 debug
+ws
 </features>
 <server>
 http
