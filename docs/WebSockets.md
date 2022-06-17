@@ -42,6 +42,16 @@ The new function calls:
 The plan is to make curl do websockets similar to telnet/nc. That part of the
 work has not been started.
 
+Ideas:
+
+ - Read stdin and send off as messages. Consider newline as end of fragment.
+   (default to text? offer option to set binary)
+ - Respond to PINGs automatically
+ - Issue PINGs at some default interval (option to switch off/change interval?)
+ - Allow `-d` to specify (initial) data to send (should the format allow for
+   multiple separate frames?)
+ - Exit after N messages received, where N can be zero.
+
 ## Test suite
 
 I looked for an existing small WebSockets server implementation with maximum
