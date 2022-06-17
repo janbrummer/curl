@@ -859,6 +859,8 @@ static void init_httprequest(struct httprequest *req)
   req->upgrade_request = 0;
 }
 
+static int send_doc(curl_socket_t sock, struct httprequest *req);
+
 /* returns 1 if the connection should be serviced again immediately, 0 if there
    is no data waiting, or < 0 if it should be closed */
 static int get_request(curl_socket_t sock, struct httprequest *req)
@@ -871,10 +873,20 @@ static int get_request(curl_socket_t sock, struct httprequest *req)
   if(req->upgrade_request) {
     /* upgraded connection, work it differently until end of connection */
     logmsg("Upgraded connection, this is a no longer HTTP/1");
+    send_doc(sock, req);
 
     /* dump the request received so far to the external file */
     reqbuf[req->offset] = '\0';
     storerequest(reqbuf, req->offset);
+    req->offset = 0;
+
+    /* read websocket traffic */
+    do {
+      got = sread(sock, reqbuf + req->offset, REQBUFSIZ - req->offset);
+      if(got > 0)
+        req->offset += got;
+      logmsg("Got: %d", (int)got);
+    } while(got > 0);
     return -1;
   }
 
