@@ -25,10 +25,6 @@ The new options to `curl_easy_setopt()`:
 
  `CURLOPT_WS_OPTIONS` - to control specific behavior (no bits implemented yet)
 
- `CURLOPT_WS_WRITEFUNCTION` - set a websocket data callback
-
- `CURLOPT_WS_WRITEDATA` - user pointer for the websocket data callback
-
 The new function calls:
 
  `curl_ws_recv()` - receive a websockets frame
@@ -36,6 +32,8 @@ The new function calls:
  `curl_ws_send()` - send a websockets frame
 
  `curl_ws_poll()` - NOT IMPLEMENTED YET
+
+ `curl_ws_meta()` - NOT IMPLEMENTED YET
 
 ## Command line tool websockets
 
