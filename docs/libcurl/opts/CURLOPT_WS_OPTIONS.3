@@ -35,14 +35,20 @@ CURLcode curl_easy_setopt(CURL *handle, CURLOPT_WS_OPTIONS, long bitmask);
 Pass a long with a bitmask to tell libcurl about specific WebSockets
 behaviors.
 
-To "detatch" a websockets connectio and use the \fIcurl_ws_send(3)\fP and
-\fIcurl_ws_recv(3)\fP functions, set the \fICURLOPT_CONNECT_ONLY(3)\fP option
-to 1L.
+To "detatch" a websockets connection and use the \fIcurl_ws_send(3)\fP and
+\fIcurl_ws_recv(3)\fP functions after the HTTP upgrade procedure, set the
+\fICURLOPT_CONNECT_ONLY(3)\fP option to 2L.
 
 Available bits in the bitmask
-.IP "CURLWS_COMPRESS (1)"
+.IP "CURLWS_RAW_MODE (1)"
+Deliver "raw" websockets traffic to the \fICURLOPT_WRITEFUNCTION(3)\fP
+callback.
+
+In raw mode, libcurl does not handle pings or any other frame for the
+application.
+.IP "CURLWS_COMPRESS_MODE (2)"
 Negotiate compression for this transfer. (NOT IMPLEMENTED YET)
-.IP "CURLWS_PINGOFF (2)"
+.IP "CURLWS_PINGOFF_MODE (4)"
 Disable automated ping/pong handling. (NOT IMPLEMENTED YET)
 .SH DEFAULT
 0
