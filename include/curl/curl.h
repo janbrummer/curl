@@ -2146,10 +2146,6 @@ typedef enum {
   /* websockets options */
   CURLOPT(CURLOPT_WS_OPTIONS, CURLOPTTYPE_LONG, 318),
 
-  /* websockets write callback */
-  CURLOPT(CURLOPT_WS_WRITEFUNCTION, CURLOPTTYPE_FUNCTIONPOINT, 319),
-  CURLOPT(CURLOPT_WS_WRITEDATA, CURLOPTTYPE_CBPOINT, 320),
-
   CURLOPT_LASTENTRY /* the last unused */
 } CURLoption;
 

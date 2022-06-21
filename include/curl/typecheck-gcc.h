@@ -374,7 +374,6 @@ CURLWARNING(_curl_easy_getinfo_err_curl_off_t,
    (option) == CURLOPT_SSH_KEYDATA ||                                         \
    (option) == CURLOPT_SSL_CTX_DATA ||                                        \
    (option) == CURLOPT_WRITEDATA ||                                           \
-   (option) == CURLOPT_WS_WRITEDATA ||                                        \
    (option) == CURLOPT_RESOLVER_START_DATA ||                                 \
    (option) == CURLOPT_TRAILERDATA ||                                         \
    (option) == CURLOPT_SSH_HOSTKEYDATA ||                                     \
