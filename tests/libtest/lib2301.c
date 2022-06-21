@@ -24,6 +24,8 @@
 
 #include "test.h"
 
+#if 0
+
 static int ping(CURL *curl, const char *send_payload)
 {
   size_t sent;
@@ -86,40 +88,61 @@ static void websocket(CURL *curl)
   websocket_close(curl);
 }
 
-static size_t writecb(char *buffer, size_t size, size_t nitems,
-                      void *outstream)
+#endif
+
+static size_t writecb(unsigned char *buffer,
+                      size_t size, size_t nitems, CURL *easy)
 {
-  fprintf(stderr, "Called CURLOPT_WRITEFUNCTION with %u bytes\n",
-          (int)size);
-  (void)buffer;
+  size_t i;
+  size_t sent;
+  unsigned char pong[] = {
+    0x8a, 0x0
+  };
+  size_t incoming = nitems;
+  fprintf(stderr, "Called CURLOPT_WRITEFUNCTION with %u bytes: ",
+          (int)nitems);
+  for(i = 0; i < nitems; i++)
+    fprintf(stderr, "%02x ", (unsigned char)buffer[i]);
+  fprintf(stderr, "\n");
   (void)size;
-  (void)nitems;
-  (void)outstream;
-  return 0;
+  if(buffer[0] == 0x89) {
+    CURLcode result;
+    fprintf(stderr, "send back a simple PONG\n");
+    result = curl_ws_send(easy, pong, 2, &sent, 0);
+    if(result)
+      nitems = 0;
+  }
+  if(nitems != incoming)
+    fprintf(stderr, "returns error from callback\n");
+  return nitems;
 }
 
 int test(char *URL)
 {
   CURL *curl;
+  CURLcode res = CURLE_OK;
+
+  global_init(CURL_GLOBAL_ALL);
 
   curl = curl_easy_init();
   if(curl) {
-    CURLcode res;
     curl_easy_setopt(curl, CURLOPT_URL, URL);
 
-    /* HTTP upgrade first, then use the WS API */
-    curl_easy_setopt(curl, CURLOPT_CONNECT_ONLY, 2L);
+    /* use the callback style */
     curl_easy_setopt(curl, CURLOPT_USERAGENT, "webbie-sox/3");
     curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+    curl_easy_setopt(curl, CURLOPT_WS_OPTIONS, CURLWS_RAW_MODE);
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writecb);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, curl);
     res = curl_easy_perform(curl);
-
     fprintf(stderr, "curl_easy_perform() returned %u\n", (int)res);
+#if 0
     if(res == CURLE_OK)
       websocket(curl);
-
+#endif
     /* always cleanup */
     curl_easy_cleanup(curl);
   }
-  return 0;
+  curl_global_cleanup();
+  return (int)res;
 }

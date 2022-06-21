@@ -882,11 +882,39 @@ static int get_request(curl_socket_t sock, struct httprequest *req)
 
     /* read websocket traffic */
     do {
+
       got = sread(sock, reqbuf + req->offset, REQBUFSIZ - req->offset);
       if(got > 0)
         req->offset += got;
       logmsg("Got: %d", (int)got);
+
+      if((got == -1) && ((EAGAIN == errno) || (EWOULDBLOCK == errno))) {
+        int rc;
+        fd_set input;
+        fd_set output;
+        struct timeval timeout = {1, 0}; /* 1000 ms */
+
+        FD_ZERO(&input);
+        FD_ZERO(&output);
+        got = 0;
+        FD_SET(sock, &input);
+        do {
+          logmsg("Wait until readable");
+          rc = select((int)sock + 1, &input, &output, NULL, &timeout);
+        } while(rc < 0 && errno == EINTR && !got_exit_signal);
+        logmsg("readable %d", rc);
+        if(rc)
+          got = 1;
+      }
     } while(got > 0);
+
+    if(req->offset) {
+      logmsg("log the websocket traffic");
+      /* dump the incoming websocket traffic to the external file */
+      reqbuf[req->offset] = '\0';
+      storerequest(reqbuf, req->offset);
+    }
+
     return -1;
   }
 
