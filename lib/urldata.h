@@ -1916,6 +1916,9 @@ struct UserDefined {
   BIT(doh_verifystatus);   /* DoH certificate status verification */
 #endif
   BIT(http09_allowed); /* allow HTTP/0.9 responses */
+#ifdef USE_WEBSOCKETS
+  BIT(ws_raw_mode);
+#endif
 };
 
 struct Names {

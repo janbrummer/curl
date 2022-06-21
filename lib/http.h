@@ -201,6 +201,11 @@ struct h3out; /* see ngtcp2 */
 #endif /* _WIN32 */
 #endif /* USE_MSH3 */
 
+struct websockets {
+  bool contfragment; /* set TRUE if the previous fragment sent was not final */
+  unsigned char mask[4]; /* 32 bit mask for this connection */
+};
+
 /****************************************************************************
  * HTTP unique setup
  ***************************************************************************/
@@ -228,8 +233,7 @@ struct HTTP {
   } sending;
 
 #ifdef USE_WEBSOCKETS
-  bool contfragment; /* set TRUE if the previous fragment sent was not final */
-  unsigned char wsmask[4]; /* 32 bit mask for this connection */
+  struct websockets ws;
 #endif
 
 #ifndef CURL_DISABLE_HTTP

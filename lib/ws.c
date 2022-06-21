@@ -114,16 +114,17 @@ CURLcode Curl_ws_accept(struct Curl_easy *data)
      the WebSocket Connection. */
 
   /* 4 bytes random */
-  result = Curl_rand(data, (unsigned char *)&ws->wsmask, sizeof(ws->wsmask));
+  result = Curl_rand(data, (unsigned char *)&ws->ws.mask, sizeof(ws->ws.mask));
   if(result)
     return result;
 
   infof(data, "Switching to WebSockets; mask %02x%02x%02x%02x",
-        ws->wsmask[0], ws->wsmask[1], ws->wsmask[2], ws->wsmask[3]);
+        ws->ws.mask[0], ws->ws.mask[1], ws->ws.mask[2], ws->ws.mask[3]);
   k->upgr101 = UPGR101_RECEIVED;
 
-  /* switch off non-blocking sockets */
-  (void)curlx_nonblock(conn->sock[FIRSTSOCKET], FALSE);
+  if(data->set.connect_only)
+    /* switch off non-blocking sockets */
+    (void)curlx_nonblock(conn->sock[FIRSTSOCKET], FALSE);
 
   return result;
 }
@@ -317,15 +318,15 @@ static size_t ws_packet(struct Curl_easy *data,
   if(!(flags & CURLWS_CONT)) {
     /* if not marked as continuing, assume this is the final fragment */
     firstbyte |= WSBIT_FIN | opcode;
-    ws->contfragment = FALSE;
+    ws->ws.contfragment = FALSE;
   }
-  else if(ws->contfragment) {
+  else if(ws->ws.contfragment) {
     /* the previous fragment was not a final one and this isn't either, keep a
        CONT opcode and no FIN bit */
     firstbyte |= WSBIT_OPCODE_CONT;
   }
   else {
-    ws->contfragment = TRUE;
+    ws->ws.contfragment = TRUE;
   }
   out[0] = firstbyte;
   if(len > 126) {
@@ -346,7 +347,7 @@ static size_t ws_packet(struct Curl_easy *data,
   infof(data, "WS: send payload len %u", (int)len);
 
   /* 4 bytes mask */
-  memcpy(&out[outi], &ws->wsmask, 4);
+  memcpy(&out[outi], &ws->ws.mask, 4);
 
   if(data->set.upload_buffer_size < (len + 10))
     return 0;
@@ -356,7 +357,7 @@ static size_t ws_packet(struct Curl_easy *data,
 
   /* append payload after the mask, XOR appropriately */
   for(i = 0, xori = 0; i < len; i++, outi++) {
-    out[outi] = payload[i] ^ ws->wsmask[xori];
+    out[outi] = payload[i] ^ ws->ws.mask[xori];
     xori++;
     xori &= 3;
   }
@@ -379,15 +380,27 @@ CURLcode curl_ws_send(struct Curl_easy *data, const void *buffer,
     return CURLE_BAD_FUNCTION_ARGUMENT;
   }
 
-  result = Curl_get_upload_buffer(data);
-  if(result)
-    return result;
+  if(data->set.ws_raw_mode && Curl_is_in_callback(data)) {
+    /* raw mode sends exactly what was requested, and this is from within
+       the write callback */
+    ssize_t written;
+    result = Curl_write(data, data->conn->writesockfd, buffer, buflen,
+                        &written);
+    fprintf(stderr, "WS: wanted to send %u bytes, sent %u bytes\n",
+            (int)buflen, (int)written);
+    bytes = written;
+  }
+  else {
+    result = Curl_get_upload_buffer(data);
+    if(result)
+      return result;
 
-  plen = ws_packet(data, buffer, buflen, sendflags);
+    plen = ws_packet(data, buffer, buflen, sendflags);
 
-  out = data->state.ulbuf;
-  result = curl_easy_send(data, out, plen, &bytes);
-  (void)sendflags;
+    out = data->state.ulbuf;
+    result = Curl_senddata(data, out, plen, &bytes);
+    (void)sendflags;
+  }
   *sent = bytes;
 
   return result;

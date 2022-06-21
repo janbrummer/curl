@@ -3037,6 +3037,15 @@ CURLcode Curl_vsetopt(struct Curl_easy *data, CURLoption option, va_list param)
   case CURLOPT_PREREQDATA:
     data->set.prereq_userp = va_arg(param, void *);
     break;
+#ifdef USE_WEBSOCKETS
+  case CURLOPT_WS_OPTIONS: {
+    bool raw;
+    arg = va_arg(param, long);
+    raw = (arg & CURLWS_RAW_MODE);
+    data->set.ws_raw_mode = raw;
+    break;
+  }
+#endif
   default:
     /* unknown tag and its companion, just ignore: */
     result = CURLE_UNKNOWN_OPTION;

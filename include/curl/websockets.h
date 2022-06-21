@@ -62,4 +62,7 @@ typedef ssize_t (*curl_ws_write_callback)(void *userdata, char *data,
                                           size_t len,
                                           unsigned int flags);
 
+/* bits for the CURLOPT_WS_OPTIONS bitmask: */
+#define CURLWS_RAW_MODE (1<<0)
+
 #endif /* CURLINC_WEBSOCKETS_H */

@@ -2770,6 +2770,13 @@ CURLcode Curl_http_bodysend(struct Curl_easy *data, struct connectdata *conn,
                               FIRSTSOCKET);
     if(result)
       failf(data, "Failed sending HTTP request");
+#ifdef USE_WEBSOCKETS
+    else if((conn->handler->protocol & (CURLPROTO_WS|CURLPROTO_WSS)) &&
+            !(data->set.connect_only))
+      /* Set up the transfer for two-way since without CONNECT_ONLY set, this
+         request probably wants to send data too post upgrade */
+      Curl_setup_transfer(data, FIRSTSOCKET, -1, TRUE, FIRSTSOCKET);
+#endif
     else
       /* HTTP GET/HEAD download: */
       Curl_setup_transfer(data, FIRSTSOCKET, -1, TRUE, -1);
@@ -4043,8 +4050,11 @@ CURLcode Curl_http_readwrite_headers(struct Curl_easy *data,
             result = Curl_ws_accept(data);
             if(result)
               return result;
-            k->keepon &= ~KEEP_RECV; /* read no more content */
-            *nread = 0;
+            k->header = FALSE; /* no more header to parse! */
+            if(data->set.connect_only) {
+              k->keepon &= ~KEEP_RECV; /* read no more content */
+              *nread = 0;
+            }
           }
 #endif
           else {
