@@ -913,7 +913,9 @@ static int get_request(curl_socket_t sock, struct httprequest *req)
       /* dump the incoming websocket traffic to the external file */
       reqbuf[req->offset] = '\0';
       storerequest(reqbuf, req->offset);
+      req->offset = 0;
     }
+    init_httprequest(req);
 
     return -1;
   }
