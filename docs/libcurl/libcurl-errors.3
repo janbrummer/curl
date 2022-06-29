@@ -281,6 +281,9 @@ be one out of several problems, see the error buffer for details.
 .IP "CURLE_QUIC_CONNECT_ERROR (96)"
 QUIC connection error. This error may be caused by an SSL library error. QUIC
 is the protocol used for HTTP/3 transfers.
+.IP "CURLE_PROXY (97)"
+Proxy handshake error. \fICURLINFO_PROXY_ERROR(3)\fP provides extra details on
+the specific problem.
 .IP "CURLE_SSL_CLIENTCERT (98)"
 SSL Client Certificate required.
 .IP "CURLE_UNRECOVERABLE_POLL (99)"
